@@ -290,7 +290,16 @@ createcontainer(){
     docker exec -i racbase$1 /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
     docker exec -ti racbase$1 /bin/bash -c 'sh /root/create_racbase.sh createbase'
     docker stop racbase$1
-    docker commit racbase test:racbase$1
+    docker commit racbase$1 s4ragent:racbase$1
+    docker rm racbase$1
+}
+
+setupssh(){
+	docker run --privileged=true -d --name racbase$1 oraclelinux:$1 /sbin/init
+	docker exec -ti racbase$1 /bin/bash -c 'sh /root/create_racbase.sh createbase'
+	docker stop racbase$1
+	docker commit racbase$1 test:racbase$1
+	docker rm racbase$1
 }
 
 docker_ip(){
