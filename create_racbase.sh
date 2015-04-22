@@ -398,9 +398,7 @@ setuploop(){
 
 
 initloop(){
-    if [ -e /dev/loop$1 ]; then
-        break
-    else
+    if [ ! -e /dev/loop$1 ]; then
         mknod /dev/loop$1 b 7 $1
         chown --reference=/dev/loop0 /dev/loop$1
         chmod --reference=/dev/loop0 /dev/loop$1
