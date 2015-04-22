@@ -1,4 +1,5 @@
 #!/bin/bash
+LANG=C
 ORA_ORACLE_BASE=/u01/app/oracle
 ORA_ORACLE_HOME=/u01/app/oracle/product/12.1.0/dbhome_1
 GRID_ORACLE_BASE=/u01/app/grid
@@ -25,7 +26,7 @@ MEMORYTARGET=2400
 TEMPLATENAME="General_Purpose.dbc"
 DATABASETYPE="MULTIPURPOSE"
 
-LANG=C
+
 release=`rpm -q --whatprovides redhat-release`
 rhel_version=`rpm -q "$release" --qf "%{version}"`
 
@@ -325,13 +326,14 @@ if [ "$5" == "gw" ] ; then
 fi
 }
 
+#$1 node number $2 OEL version
 createnode(){
     nodename=`getnodename $1`
     IP=`expr 100 + $1`
     mkdir -p /docker/$nodename
     qemu-img create -f raw -o size=20G /docker/$nodename/orahome.img
     mkfs.ext4 -F /docker/$nodename/orahome.img
-    setuploop $1 /docker/$nodename/orahome.img
+    setuploop $IP /docker/$nodename/orahome.img
     docker run --privileged=true -d -h ${nodename}.${DOMAIN_NAME} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media test:racbase$2 /sbin/init
     docker_ip $nodename brvxlan0 eth1 192.168.0.${IP}/24
     docker_ip $nodename brvxlan1 eth2 192.168.100.${IP}/24
@@ -342,22 +344,16 @@ createnode(){
     docker exec -ti $nodename /bin/bash -c 'mount -a'
     docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome
 
-    if [ "$1" == "1" ] ; then
-        dd if=/dev/zero of=/dev/loop30 bs=1M count=100
-         
-        docker cp  ${nodename}:/home/oracle/.ssh/id_rsa  oraclekey
-        docker cp  ${nodename}:/home/grid/.ssh/id_rsa  gridkey
-    fi
+
     
     
 }
 
 setuploop(){
-    loopdevnum=`expr 100 + $1`
-    initloop $loopdevnum
+    initloop $1
     cnt=0
     while true; do
-        losetup /dev/loop$loopdevnum $2
+        losetup /dev/loop$1 $2
         if [ $? -eq 0 ]; then
             break
         fi
@@ -517,6 +513,13 @@ EOF
     chmod 755 /home/grid/asm.rsp
     chown grid.oinstall /home/grid/grid.rsp
     chown grid.oinstall /home/grid/asm.rsp
+    
+    chmod 755 /home/oracle/db.rsp
+    chown oracle.oinstall /home/oracle/db.rsp
+}
+
+grid_install(){
+	ssh -i gridkey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grid@192.168.0.101 "/media/grid/runInstaller -silent -responseFile /home/grid/grid.rsp -ignoreSysPrereqs -ignorePrereq"
 }
 
 exedbca(){
@@ -557,10 +560,52 @@ exegridrootsh(){
 	    #sleep 30s
 	done
 }
+db_install(){
+	ssh -i oraclekey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null oracle@192.168.0.101 "/media/database/runInstaller -silent -responseFile /home/oracle/db.rsp -ignoreSysPrereqs -ignorePrereq"
+}
+
+exeorarootsh(){
+    	NODECOUNT=1
+    	for i in `seq 1 $1`;
+	do
+	    docker exec -ti `getnodename $NODECOUNT` $ORA_ORACLE_HOME/orainstRoot.sh
+	done
+}
 
 gridstatus(){
     docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/bin/crsctl status resource -t
 }
+
+#$1 count of nodes $2 OEL version
+nodeinstalldbca(){
+	for i in `seq 1 $1`;
+	do
+	    createnode $i $2
+	done
+	
+        createshareddisk
+        
+        nodename=`getnodename 1`
+        docker cp  ${nodename}:/home/oracle/.ssh/id_rsa  oraclekey
+        docker cp  ${nodename}:/home/grid/.ssh/id_rsa  gridkey
+        
+        grid_install
+        exegridrootsh
+        exeasmca
+        gridstatus
+        db_install
+	exeorarootsh
+	exedbca
+	gridstatus
+}
+
+createshareddisk(){
+	mkdir -p /docker/share
+	qemu-img create -f raw -o size=20G /docker/share/share.img
+	setuploop 30 /docker/share/share.img
+	dd if=/dev/zero of=/dev/loop30 bs=1M count=100
+}
+
 
 case "$1" in
   "createoraclehome" ) shift;createoraclehome $*;;
@@ -568,5 +613,6 @@ case "$1" in
   "createbase" ) shift;createbase $*;;
   "createcontainer" shift;createcontainer $*;;
   "createnode" shift;createnode $*;;
+  "nodeinstalldbca" shift;nodeinstalldbca $*;;
   * ) echo "Ex " ;;
 esac
