@@ -268,6 +268,10 @@ esac
 }
 
 createoraclehome(){
+    mkdir $MOUNT_PATH
+    IP=`expr 100 + $1`
+    echo "/dev/loop${IP} /u01 ext4 defaults 0 0" >> /etc/fstab
+    mount -a
     mkdir -p ${GRID_ORACLE_BASE}
     mkdir -p ${GRID_ORACLE_HOME}
     mkdir -p ${MEDIA_PATH}
@@ -360,12 +364,8 @@ createnode(){
     docker_ip $nodename brvxlan0 eth1 192.168.0.${IP}/24
     docker_ip $nodename brvxlan1 eth2 192.168.100.${IP}/24
     sleep 35
-    docker exec -ti $nodename /bin/bash -c 'mkdir /u01'
-    docker exec -i $nodename /bin/bash -c 'cat >>/etc/fstab' < cat "/dev/loop${IP} /u01 ext4 defaults 0 0"
-    #docker exec -ti $nodename /bin/bash -c 'echo "/dev/loop32 /u01 ext4 defaults 0 0" >> /etc/fstab'
-    docker exec -ti $nodename /bin/bash -c 'mount -a'
     docker exec -i $nodename /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
-    docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome
+    docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome $1
 }
 
 #$1 node number
