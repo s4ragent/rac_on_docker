@@ -344,7 +344,7 @@ createnode(){
     qemu-img create -f raw -o size=20G /docker/$nodename/orahome.img
     mkfs.ext4 -F /docker/$nodename/orahome.img
     setuploop $IP /docker/$nodename/orahome.img
-    docker run --privileged=true -d -h ${nodename}.${DOMAIN_NAME} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media test:racbase$2 /sbin/init
+    docker run --privileged=true -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media test:racbase$2 /sbin/init
     docker_ip $nodename brvxlan0 eth1 192.168.0.${IP}/24
     docker_ip $nodename brvxlan1 eth2 192.168.100.${IP}/24
     sleep 35
@@ -354,10 +354,29 @@ createnode(){
     docker exec -ti $nodename /bin/bash -c 'mount -a'
     docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome
 
-
-    
-    
 }
+
+#$1 node number $2 OEL version
+deletenode(){
+    nodename=`getnodename $1`
+    IP=`expr 100 + $1`
+    docker stop ${nodename}
+    docker rm ${nodename}
+    losetup -d /dev/loop${IP}
+    rm -rf  /docker/$nodename
+}
+
+#$1 OEL version
+deleteall(){
+	
+	for i in `seq 1 64`;
+	do
+	    deletenode $i $1
+	done
+	losetup -d /dev/loop30
+	rm -rf /docker/share
+}
+
 
 setuploop(){
     initloop $1
