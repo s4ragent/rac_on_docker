@@ -9,6 +9,7 @@ MOUNT_PATH=/u01
 MEDIA_PATH=/media
 NODEPREFIX=node
 DOMAIN_NAME=public
+SHAREDDISK_SIZE=20G
 
 SCAN_NAME="scan"
 CLUSTER_NAME="node-cluster"
@@ -631,7 +632,7 @@ nodeinstalldbca(){
 
 createshareddisk(){
 	mkdir -p /docker/share
-	qemu-img create -f raw -o size=20G /docker/share/share.img
+	qemu-img create -f raw -o size=$SHAREDDISK_SIZE /docker/share/share.img
 	setuploop 30 /docker/share/share.img
 	dd if=/dev/zero of=/dev/loop30 bs=1M count=100
 }
