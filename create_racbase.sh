@@ -1,4 +1,5 @@
 #!/bin/bash
+LANG=C
 source ./common.sh
 release=`rpm -q --whatprovides redhat-release`
 rhel_version=`rpm -q "$release" --qf "%{version}"`
@@ -173,13 +174,14 @@ createpreoracle6(){
 createpreoracle7(){
   cat > /etc/systemd/system/preoracle.service<<'EOF'
 [Unit]
-Description=pre network
+Description=preoracle
 Requires=network.target
 Before=network.target remote-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/bin/preoracle.sh
+ExecStart=/usr/local/bin/preoracle.sh start
+ExecStop=/usr/local/bin/preoracle.sh stop
 User=root
 Group=root
 
@@ -241,3 +243,60 @@ createoraclehome(){
     chmod -R 775 ${MOUNT_PATH}
 }
 
+createbase(){
+    installpackages
+    createuser
+    enableping
+    createdns
+    createrules
+    createpreoracle
+}
+
+createcontainer(){
+    docker run --privileged=true -d --name racbase$1 oraclelinux:$1 /sbin/init
+    docker exec -i racbase$1 /bin/bash -c 'cat >/root/create_racbase.sh createbase' <./create_racbase.sh
+    docker stop racbase$1
+    docker commit racbase test:racbase$1
+}
+
+docker_ip(){
+#$1 container name
+#$2 brigde name
+#$3 container's inf name
+#$4 ip addr
+#$5 add gateway or not
+#ex xxx.sh node1 docker1 eth1 192.168.0.101/24
+gateway=`ip addr show $2 | grep "inet " | awk -F '[/ ]' '{print $6}'`
+mtu=`ip link show $2 | grep mtu | awk '{print $5}'`
+pid=`docker inspect -f '{{.State.Pid}}' $1`
+mkdir -p /var/run/netns
+ln -s /proc/${pid}/ns/net /var/run/netns/${pid}
+veth=`perl -e 'print sprintf("%2.2x%2.2x%2.2x", rand()*255, rand()*255, rand()*255)'`
+
+ip link add vethb${veth} type veth peer name vethc${veth}
+
+brctl addif $2 vethb${veth}
+ip link set vethb${veth} up
+ip link set vethb${veth} mtu $mtu
+
+ip link set vethc${veth} netns ${pid}
+ip netns exec ${pid} ip link set vethc${veth} down
+ip netns exec ${pid} ip link set dev vethc${veth} name $3
+ip netns exec ${pid} ip link set $3 up
+
+vmac=`perl -e 'print sprintf("00:16:3e:%2.2x:%2.2x:%2.2x", rand()*255, rand()*255, rand()*255)'`
+ip netns exec ${pid} ip link set $3 address $vmac
+ip netns exec ${pid} ip link set $3 mtu $mtu
+ip netns exec ${pid} ip addr add $4 dev $3
+if [ "$5" == "gw" ] ; then
+  ip netns exec ${pid} ip route add default via $gateway
+fi
+}
+
+case "$1" in
+  "createoraclehome" ) shift;createoraclehome $*;;
+  "createsshkey" ) shift;createsshkey $*;;
+  "createbase" ) shift;createbase $*;;
+  "createcontainer" shift;createcontainer $*;;
+  * ) echo "Ex " ;;
+esac
