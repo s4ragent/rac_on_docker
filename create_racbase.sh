@@ -613,8 +613,8 @@ case "$1" in
   "creatersp" ) shift;creatersp $*;;
   "createsshkey" ) shift;createsshkey $*;;
   "createbase" ) shift;createbase $*;;
-  "createcontainer" shift;createcontainer $*;;
-  "createnode" shift;createnode $*;;
-  "nodeinstalldbca" shift;nodeinstalldbca $*;;
+  "createcontainer" ) shift;createcontainer $*;;
+  "createnode" ) shift;createnode $*;;
+  "nodeinstalldbca" ) shift;nodeinstalldbca $*;;
   * ) echo "Ex " ;;
 esac
