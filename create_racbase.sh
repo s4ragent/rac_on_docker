@@ -337,6 +337,17 @@ if [ "$5" == "gw" ] ; then
 fi
 }
 
+createbrigde(){
+	/sbin/brctl addbr brvxlan0
+	/sbin/ip addr add 192.168.0.1/24 dev brvxlan0
+	/sbin/ip link set dev brvxlan0 up
+ 
+	/sbin/brctl addbr brvxlan1
+	/sbin/ip addr add 192.168.100.1/24 dev brvxlan1
+	/sbin/ip link set dev brvxlan1 up 
+}
+
+
 #$1 node number $2 OEL version
 createnode(){
     nodename=`getnodename $1`
@@ -353,8 +364,30 @@ createnode(){
     docker exec -i $nodename /bin/bash -c 'cat >>/etc/fstab' < echo "/dev/loop${IP} /u01 ext4 defaults 0 0"
     #docker exec -ti $nodename /bin/bash -c 'echo "/dev/loop32 /u01 ext4 defaults 0 0" >> /etc/fstab'
     docker exec -ti $nodename /bin/bash -c 'mount -a'
+    docker exec -i $nodename /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
     docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome
+}
 
+#$1 node number
+startnode(){
+    nodename=`getnodename $1`
+    IP=`expr 100 + $1`
+    setuploop $IP /docker/$nodename/orahome.img
+    docker start ${nodename} --dns=127.0.0.1 
+    docker_ip $nodename brvxlan0 eth1 192.168.0.${IP}/24
+    docker_ip $nodename brvxlan1 eth2 192.168.100.${IP}/24
+}
+
+startdisk(){
+	setuploop 30 /docker/share/share.img
+}
+
+startall(){
+	startdisk
+	for i in `seq 1 64`;
+	do
+	    startnode $i 
+	done
 }
 
 #$1 node number $2 OEL version
@@ -644,5 +677,9 @@ case "$1" in
   "createcontainer" ) shift;createcontainer $*;;
   "createnode" ) shift;createnode $*;;
   "nodeinstalldbca" ) shift;nodeinstalldbca $*;;
+  "deleteall" ) shift;deleteall $*;;
+  "startnode" ) shift;startnode $*;;
+  "startall" ) shift;startall $*;;
+  "startdisk" ) shift;startdisk $*;;
   * ) echo "Ex " ;;
 esac
