@@ -588,6 +588,7 @@ nodeinstalldbca(){
         nodename=`getnodename 1`
         docker cp  ${nodename}:/home/oracle/.ssh/id_rsa  oraclekey
         docker cp  ${nodename}:/home/grid/.ssh/id_rsa  gridkey
+        docker exec -ti ${nodename} /root/create_racbase.sh creatersp $1
         
         grid_install
         exegridrootsh
@@ -609,6 +610,7 @@ createshareddisk(){
 
 case "$1" in
   "createoraclehome" ) shift;createoraclehome $*;;
+  "creatersp" ) shift;creatersp $*;;
   "createsshkey" ) shift;createsshkey $*;;
   "createbase" ) shift;createbase $*;;
   "createcontainer" shift;createcontainer $*;;
