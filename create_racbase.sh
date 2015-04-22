@@ -287,7 +287,8 @@ createbase(){
 
 createcontainer(){
     docker run --privileged=true -d --name racbase$1 oraclelinux:$1 /sbin/init
-    docker exec -i racbase$1 /bin/bash -c 'cat >/root/create_racbase.sh createbase' <./create_racbase.sh
+    docker exec -i racbase$1 /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
+    docker exec -ti racbase$1 /bin/bash -c 'sh /root/create_racbase.sh createbase'
     docker stop racbase$1
     docker commit racbase test:racbase$1
 }
