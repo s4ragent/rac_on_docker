@@ -42,12 +42,15 @@ installpackages(){
 case "$rhel_version" in
     7*)
       yum --enablerepo=ol7_addons install oracle-rdbms-server-12cR1-preinstall tar net-tools expect dnsmasq bind-utils -y
+      yum -y reinstall glibc-common
       ;;
     6*)
       yum install oracle-rdbms-server-12cR1-preinstall tar net-tools expect dnsmasq bind-utils -y
+      yum -y reinstall glibc-common
       ;;
     5*)
       yum install oracle-rdbms-server-12cR1-preinstall tar net-tools expect dnsmasq bind-utils -y
+      yum -y reinstall glibc-common
       ;;
     *) exit;;
 esac
@@ -608,28 +611,27 @@ exeasmca(){
 }
 
 exegridrootsh(){
-    NODECOUNT=1
-    for i in `seq 1 $1`;
+	for i in `seq 1 $1`;
 	do
-	    docker exec -ti `getnodename $NODECOUNT` $ORAINVENTORY/orainstRoot.sh
+	    docker exec -ti `getnodename $i` $ORAINVENTORY/orainstRoot.sh
 	done
-    
-    docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/root.sh
-    for i in `seq 2 $1`;
+	
+	docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/root.sh
+	for i in `seq 2 $1`;
 	do
-	    docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/root.sh &
+	    docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/root.sh
 	    #sleep 30s
 	done
 }
+
 db_install(){
 	ssh -i oraclekey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null oracle@192.168.0.101 "/media/database/runInstaller -silent -responseFile /home/oracle/db.rsp -ignoreSysPrereqs -ignorePrereq"
 }
 
 exeorarootsh(){
-    	NODECOUNT=1
     	for i in `seq 1 $1`;
 	do
-	    docker exec -ti `getnodename $NODECOUNT` $ORA_ORACLE_HOME/orainstRoot.sh
+	    docker exec -ti `getnodename $i` $ORA_ORACLE_HOME/root.sh
 	done
 }
 
@@ -652,12 +654,12 @@ nodeinstalldbca(){
         docker exec -ti ${nodename} sh /root/create_racbase.sh creatersp $1
         
         grid_install
-        exegridrootsh
+        exegridrootsh $1
         exeasmca
         gridstatus
         db_install
-	exeorarootsh
-	exedbca
+	exeorarootsh $1
+	exedbca $1
 	gridstatus
 }
 
