@@ -28,14 +28,77 @@ TEMPLATENAME="General_Purpose.dbc"
 DATABASETYPE="MULTIPURPOSE"
 
 
-release=`rpm -q --whatprovides redhat-release`
-rhel_version=`rpm -q "$release" --qf "%{version}"`
+CPU_SHARE=1024
+MEMORY_LIMIT=3750m
+NETWORKS=("192.168.0.0" "192.168.100.0")
+BRNAME=("rac1" "rac2")
+BASE_IP=50
+DOCKER_CAPS="--privileged=true"
+#DOCKER_CAPS="--cap-add=ALL --cap-drop=SYS_TTY_CONFIG"
+#DOCKER_CAPS="--cap-add=SYS_ADMIN --cap-add=SYS_TTY_CONFIG"
+
+if [ -e /etc/debian_version ]; then
+	PLATFORM="Debian"
+else
+	PLATFORM="Redhat"
+	release=`rpm -q --whatprovides redhat-release`
+	rhel_version=`rpm -q "$release" --qf "%{version}"`
+fi
+
+host_setup(){
+case "$PLATFORM" in
+    "Debian")
+	hostinstallpackagesdebian
+	#setdockersecurity
+	createbr
+      ;;
+    "Redhat")
+	hostinstallpackagesrhel
+	#setdockersecurity
+	createbr
+      ;;
+esac
+}
+
+hostinstallpackagesdebian(){
+	apt-get -y update	
+	apt-get -y install qemu-utils bridge-utils apparmor-utils
+	HaveDocker=`dpkg -l | grep docker | wc -l`
+	if [ $HaveDocker == "0" ]; then
+		wget -qO- https://get.docker.com/ | sh	
+	fi	
+}
+
+hostinstallpackagesrhel(){
+	HaveDocker=`rpm -qa | grep docker | wc -l`
+}
 
 getnodename ()
 {
   echo "$NODEPREFIX"`printf "%.3d" $1`
 }
 
+## $1 network number, $2 real/vip/priv $3 nodenumber           ### 
+## Ex.   network 192.168.0.0 , 192.168.100.0  and BASE_IP=50 >>>##
+## getip 0 vip 2 >>> 192.168.0.52 ###
+getip ()
+{
+	SEGMENT=`echo ${NETWORKS[$1]} | grep -Po '\d{1,3}\.\d{1,3}\.\d{1,3}\.'`
+	if [ $2 == "real" ] ; then
+  		IP=`expr $BASE_IP + $3`
+		echo "${SEGMENT}${IP}"
+	elif [ $2 == "vip" ] ; then
+		IP=`expr $BASE_IP + 100 + $3`
+		echo "${SEGMENT}${IP}"
+	elif [ $2 == "host" ] ; then
+		IP=`expr $BASE_IP - 10 + $3`
+		echo "${SEGMENT}${IP}"
+	elif [ $2 == "scan" ] ; then
+    		echo "${SEGMENT}`expr $BASE_IP - 20 ` ${SCAN_NAME}.${DOMAIN_NAME} ${SCAN_NAME}"
+    		echo "${SEGMENT}`expr $BASE_IP - 20 + 1` ${SCAN_NAME}.${DOMAIN_NAME} ${SCAN_NAME}"
+    		echo "${SEGMENT}`expr $BASE_IP - 20 + 2` ${SCAN_NAME}.${DOMAIN_NAME} ${SCAN_NAME}"
+	fi
+}
 
 
 installpackages(){
@@ -43,16 +106,30 @@ case "$rhel_version" in
     7*)
       yum --enablerepo=ol7_addons install oracle-rdbms-server-12cR1-preinstall tar net-tools expect dnsmasq bind-utils -y
       yum -y reinstall glibc-common
+      yum -y clean all
       ;;
     6*)
       yum install oracle-rdbms-server-12cR1-preinstall tar net-tools expect dnsmasq bind-utils -y
       yum -y reinstall glibc-common
+      yum -y clean all
       ;;
     5*)
       yum install oracle-rdbms-server-12cR1-preinstall tar net-tools expect dnsmasq bind-utils -y
       yum -y reinstall glibc-common
+      yum -y clean all
       ;;
     *) exit;;
+esac
+}
+
+setdockersecurity(){
+case "$PLATFORM" in
+    "Debian")
+	aa-complain /etc/apparmor.d/docker
+      ;;
+    "Redhat")
+	setenforce 0
+      ;;
 esac
 }
 
@@ -71,11 +148,11 @@ createuser(){
   groupadd -g 601 oinstall
   groupadd -g 602 dba
   groupadd -g 603 oper
-  groupadd -g 1001 asmadmin
-  groupadd -g 1002 asmdba
-  groupadd -g 1003 asmoper
+  groupadd -g 2001 asmadmin
+  groupadd -g 2002 asmdba
+  groupadd -g 2003 asmoper
   useradd -u 501 -m -g oinstall -G dba,oper,asmdba -d /home/oracle -s /bin/bash -c"Oracle Software Owner" oracle
-  useradd -u 1001 -m -g oinstall -G asmadmin,asmdba,asmoper -d /home/grid -s /bin/bash -c "Grid Infrastructure Owner" grid
+  useradd -u 2001 -m -g oinstall -G asmadmin,asmdba,asmoper -d /home/grid -s /bin/bash -c "Grid Infrastructure Owner" grid
 
 ### edit bash &bashrc ###
    cat >> /home/oracle/.bashrc <<'EOF'
@@ -122,19 +199,18 @@ EOF
 createsshkey(){
   mkdir -p /work/
   ssh-keygen -t rsa -P "" -f /work/id_rsa
+	hostkey=`cat /etc/ssh/ssh_host_rsa_key.pub`
+    for i in `seq 1 64`; do
+      nodename=`getnodename $i`
+      #ssh-keyscan -T 180 -t rsa localhost | sed "s/localhost/${nodename},`getip 0 real $i`/" >> /work/known_hosts
+      echo "${nodename},`getip 0 real $i` $hostkey" >> /work/known_hosts
+    done
 
   for user in oracle grid
   do
     mkdir /home/$user/.ssh
     cat /work/id_rsa.pub >> /home/$user/.ssh/authorized_keys
     cp /work/id_rsa /home/$user/.ssh/
-    
-    for i in `seq 1 64`; do
-      IP=`expr 100 + $i`
-      nodename=`getnodename $i`
-      ssh-keyscan -t rsa localhost | sed "s/localhost/${nodename},192.168.0.${IP}/" >> /work/known_hosts
-    done
-    
   cp /work/known_hosts /home/$user/.ssh
   chown -R ${user}.oinstall /home/$user/.ssh
   chmod 700 /home/$user/.ssh
@@ -149,21 +225,24 @@ enableping(){
 }
 
 createdns(){
-cp /etc/hosts /tmp/hosts
+#cp /etc/hosts /tmp/hosts
+rm -rf /tmp/hosts
+cat << EOF >/tmp/hosts
+127.0.0.1       localhost
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+EOF
 sed -i.bak 's:/etc/hosts:/tmp/hosts:g' /lib64/libnss_files.so.2
-cat << EOT >> /tmp/hosts
-192.168.0.31 ${SCAN_NAME}.${DOMAIN_NAME} ${SCAN_NAME}
-192.168.0.32 ${SCAN_NAME}.${DOMAIN_NAME} ${SCAN_NAME}
-192.168.0.33 ${SCAN_NAME}.${DOMAIN_NAME} ${SCAN_NAME}
-EOT
-
+getip 0 scan >> /tmp/hosts
 for i in `seq 1 64`; do
-  IP=`expr 100 + $i`
   nodename=`getnodename $i`
-  echo "192.168.0.${IP} $nodename".${DOMAIN_NAME}" $nodename" >> /tmp/hosts
-  VIP=`expr 200 + $i`
+  echo "`getip 0 real $i` $nodename".${DOMAIN_NAME}" $nodename" >> /tmp/hosts
   vipnodename=$nodename"-vip"
-  echo "192.168.0.${VIP} $vipnodename".${DOMAIN_NAME}" $vipnodename" >> /tmp/hosts
+  vipi=`expr $i + 100`
+  echo "`getip 0 real $vipi` $vipnodename".${DOMAIN_NAME}" $vipnodename" >> /tmp/hosts
 done
 
 #http://qiita.com/inokappa/items/89ab9b7f39bc1ad2f197
@@ -291,22 +370,25 @@ createbase(){
     createdns
     createrules
     createpreoracle
+    disabletty
 }
 
 createcontainer(){
-    docker run --privileged=true -d --name racbase$1 oraclelinux:$1 /sbin/init
+    docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS -d --name racbase$1 oraclelinux:$1 /sbin/init
     docker exec -i racbase$1 /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
     docker exec -ti racbase$1 /bin/bash -c 'sh /root/create_racbase.sh createbase'
     docker stop racbase$1
-    docker commit racbase$1 s4ragent:racbase$1
+    docker commit racbase$1 s4ragent/rac-on-docker:$1
     docker rm racbase$1
 }
 
 setupssh(){
-	docker run --privileged=true -d --name racbase$1 oraclelinux:$1 /sbin/init
-	docker exec -ti racbase$1 /bin/bash -c 'sh /root/create_racbase.sh createbase'
+    	docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS -d --name racbase$1 s4ragent/rac-on-docker:$1 /sbin/init
+	sleep 35
+	docker exec -i racbase$1 /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
+	docker exec -ti racbase$1 /bin/bash -c 'sh /root/create_racbase.sh createsshkey'
 	docker stop racbase$1
-	docker commit racbase$1 test:racbase$1
+	docker commit racbase$1 ractest:racbase$1
 	docker rm racbase$1
 }
 
@@ -344,31 +426,82 @@ if [ "$5" == "gw" ] ; then
 fi
 }
 
-createbrigde(){
-	/sbin/brctl addbr brvxlan0
-	/sbin/ip addr add 192.168.0.1/24 dev brvxlan0
-	/sbin/ip link set dev brvxlan0 up
- 
-	/sbin/brctl addbr brvxlan1
-	/sbin/ip addr add 192.168.100.1/24 dev brvxlan1
-	/sbin/ip link set dev brvxlan1 up 
+createbr(){
+	hostid=0
+	if [ "$1" != "" ] ; then
+		hostid=$1
+	fi
+
+        for (( k = 0; k < ${#BRNAME[@]}; ++k ))
+        do
+	
+		ip link set vethb${BRNAME[$k]} down
+		brctl delif ${BRNAME[$k]} vethb${BRNAME[$k]}
+		/sbin/ip link del vethb${BRNAME[$k]} 
+		/sbin/ip link set dev ${BRNAME[$k]} down
+		/sbin/brctl delbr ${BRNAME[$k]}
+		/sbin/brctl addbr ${BRNAME[$k]}
+		/sbin/ip addr add `getip $k host $hostid`/24 dev ${BRNAME[$k]} 
+		/sbin/ip link set dev  ${BRNAME[$k]} up
+
+		/sbin/ip link add vethb${BRNAME[$k]} type veth peer name vethc${BRNAME[$k]}
+		brctl addif ${BRNAME[$k]} vethb${BRNAME[$k]}
+		ip link set vethb${BRNAME[$k]} up
+		ip link set vethc${BRNAME[$k]} up
+		ip link set vethb${BRNAME[$k]} mtu 9000
+		ip link set vethc${BRNAME[$k]} mtu 9000
+		ip link set ${BRNAME[$k]} mtu 9000
+        done
 }
 
 
 #$1 node number $2 OEL version
 createnode(){
-    nodename=`getnodename $1`
-    IP=`expr 100 + $1`
-    mkdir -p /docker/$nodename
-    qemu-img create -f raw -o size=20G /docker/$nodename/orahome.img
-    mkfs.ext4 -F /docker/$nodename/orahome.img
-    setuploop $IP /docker/$nodename/orahome.img
-    docker run --privileged=true -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media test:racbase$2 /sbin/init
-    docker_ip $nodename brvxlan0 eth1 192.168.0.${IP}/24
-    docker_ip $nodename brvxlan1 eth2 192.168.100.${IP}/24
-    sleep 35
-    docker exec -i $nodename /bin/bash -c 'cat >/root/create_racbase.sh' <./create_racbase.sh
-    docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome $1
+	nodename=`getnodename $1`
+	IP=`expr 100 + $1`
+	mkdir -p /docker/$nodename
+	qemu-img create -f raw -o size=20G /docker/$nodename/orahome.img
+	mkfs.ext4 -F /docker/$nodename/orahome.img
+	setuploop $IP /docker/$nodename/orahome.img
+	#docker run -c $CPU_SHARE -m $MEMORY_LIMIT --privileged=true -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media ractest:racbase$2 /sbin/init
+	docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS --device=/dev/loop30:/dev/loop30 --device=/dev/loop${IP}:/dev/loop${IP} -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media ractest:racbase$2 /sbin/init
+	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
+	do
+		docker_ip $nodename ${BRNAME[$k]} eth`expr $k + 1` `getip $k real $1`/24
+        done
+	if [ "$2" != "7" ] ; then
+		docker exec -ti $nodename hostname ${nodename}.${DOMAIN_NAME}
+		docker exec -ti $nodename sed -i "s/localhost.localdomain/${nodename}.${DOMAIN_NAME}/g" /etc/sysconfig/network
+	fi
+	sleep 35
+	copyfile $nodename ./create_racbase.sh /root/create_racbase.sh
+	docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome $1
+}
+
+#$1 containername $2 fromfile $3 tofile(fullpath)
+copyfile(){
+	docker exec -i $1 /bin/bash -c 'cat >/root/tmp' < $2
+	docker exec -ti $1  mv -f /root/tmp $3
+}
+
+#$1 node number $2 OEL version
+createtestnode(){
+	HostID=`expr $1 + 100`
+        IP=`expr $1 + 170`
+	nodename=`getnodename $HostID`
+	mkdir -p /docker/$nodename
+	qemu-img create -f raw -o size=20G /docker/$nodename/orahome.img
+	mkfs.ext4 -F /docker/$nodename/orahome.img
+	setuploop $IP /docker/$nodename/orahome.img
+	docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS -h ${nodename}.${DOMAIN_NAME} --name ${nodename}  -v /lib/modules:/lib/modules -v /docker/media:/media oraclelinux:$2 /sbin/init
+	##### ########
+	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
+	do
+		docker_ip $nodename ${BRNAME[$k]} eth`expr $k + 1` `getip $k real $IP`/24
+        done
+	#sleep 35
+	copyfile $nodename ./create_racbase.sh /root/create_racbase.sh
+	#docker exec -ti $nodename sh /root/create_racbase.sh createoraclehome $1
 }
 
 #$1 node number
@@ -406,7 +539,7 @@ deletenode(){
 #$1 OEL version
 deleteall(){
 	
-	for i in `seq 1 64`;
+	for i in `seq 1 164`;
 	do
 	    deletenode $i $1
 	done
@@ -583,7 +716,7 @@ EOF
 }
 
 grid_install(){
-	ssh -i gridkey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grid@192.168.0.101 "/media/grid/runInstaller -silent -responseFile /home/grid/grid.rsp -ignoreSysPrereqs -ignorePrereq"
+	ssh -i gridkey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grid@`getip 0 real 1` "/media/grid/runInstaller -silent -responseFile /home/grid/grid.rsp -ignoreSysPrereqs -ignorePrereq"
 }
 
 exedbca(){
@@ -603,11 +736,11 @@ exedbca(){
 			NODECOUNT=`expr $NODECOUNT + 1`
 	done
 
-	ssh -i oraclekey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null oracle@192.168.0.101 "$ORA_ORACLE_HOME/bin/dbca $dbcaoption"
+	ssh -i oraclekey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null oracle@`getip 0 real 1` "$ORA_ORACLE_HOME/bin/dbca $dbcaoption"
 }
 
 exeasmca(){
-    ssh -i gridkey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grid@192.168.0.101 "$GRID_ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/asm.rsp"
+    ssh -i gridkey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null grid@`getip 0 real 1` "$GRID_ORACLE_HOME/cfgtoollogs/configToolAllCommands RESPONSE_FILE=/home/grid/asm.rsp"
 }
 
 exegridrootsh(){
@@ -619,13 +752,13 @@ exegridrootsh(){
 	docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/root.sh
 	for i in `seq 2 $1`;
 	do
-	    docker exec -ti `getnodename 1` $GRID_ORACLE_HOME/root.sh
+	    docker exec -ti `getnodename $i` $GRID_ORACLE_HOME/root.sh
 	    #sleep 30s
 	done
 }
 
 db_install(){
-	ssh -i oraclekey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null oracle@192.168.0.101 "/media/database/runInstaller -silent -responseFile /home/oracle/db.rsp -ignoreSysPrereqs -ignorePrereq"
+	ssh -i oraclekey/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null oracle@`getip 0 real 1` "/media/database/runInstaller -silent -responseFile /home/oracle/db.rsp -ignoreSysPrereqs -ignorePrereq"
 }
 
 exeorarootsh(){
@@ -641,14 +774,16 @@ gridstatus(){
 
 #$1 count of nodes $2 OEL version
 nodeinstalldbca(){
+        createshareddisk
 	for i in `seq 1 $1`;
 	do
 	    createnode $i $2
 	done
 	
-        createshareddisk
         
         nodename=`getnodename 1`
+	rm -rf oraclekey
+	rm -rf gridkey
         docker cp  ${nodename}:/home/oracle/.ssh/id_rsa  oraclekey
         docker cp  ${nodename}:/home/grid/.ssh/id_rsa  gridkey
         docker exec -ti ${nodename} sh /root/create_racbase.sh creatersp $1
@@ -670,18 +805,45 @@ createshareddisk(){
 	dd if=/dev/zero of=/dev/loop30 bs=1M count=100
 }
 
+dockerin(){
+	docker exec -ti $1 /bin/bash
+}
+
+disabletty(){
+	systemctl mask getty@tty1.service
+	systemctl stop getty@tty1.service
+	systemctl mask serial-getty@ttyS0.service
+	systemctl stop serial-getty@ttyS0.service
+}
 
 case "$1" in
   "createoraclehome" ) shift;createoraclehome $*;;
+  "createbr" ) shift;createbr $*;;
   "creatersp" ) shift;creatersp $*;;
   "createsshkey" ) shift;createsshkey $*;;
+  "setupssh" ) shift;setupssh $*;;
   "createbase" ) shift;createbase $*;;
   "createcontainer" ) shift;createcontainer $*;;
   "createnode" ) shift;createnode $*;;
+  "createtestnode" ) shift;createtestnode $*;;
   "nodeinstalldbca" ) shift;nodeinstalldbca $*;;
+  "grid_install" ) shift;grid_install $*;;
+  "exegridrootsh" ) shift;exegridrootsh $*;;
+  "exeasmca" ) shift;exeasmca $*;;
+  "gridstatus" ) shift;gridstatus $*;;
+  "db_install" ) shift;db_install $*;;
+  "exeorarootsh" ) shift;exeorarootsh $*;;
+  "exedbca" ) shift;exedbca $*;;
   "deleteall" ) shift;deleteall $*;;
   "startnode" ) shift;startnode $*;;
   "startall" ) shift;startall $*;;
   "startdisk" ) shift;startdisk $*;;
+  "getip" ) shift;getip $*;;
+  "copyfile" ) shift;copyfile $*;;
+  "dockerin" ) shift;dockerin $*;;
+  "createdns" ) shift;createdns $*;;
+  "createuser" ) shift;createuser $*;;
+  "setdockersecurity" ) shift;setdockersecurity $*;;
+  "host_setup" ) shift;host_setup $*;;
   * ) echo "Ex " ;;
 esac
