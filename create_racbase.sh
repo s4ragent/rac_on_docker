@@ -810,10 +810,10 @@ dockerin(){
 }
 
 disabletty(){
-	systemctl mask getty@tty1.service
 	systemctl stop getty@tty1.service
-	systemctl mask serial-getty@ttyS0.service
+	systemctl mask getty@tty1.service
 	systemctl stop serial-getty@ttyS0.service
+	systemctl mask serial-getty@ttyS0.service
 }
 
 case "$1" in
