@@ -26,7 +26,8 @@ NCHAR="AL16UTF16"
 MEMORYTARGET=2400
 TEMPLATENAME="General_Purpose.dbc"
 DATABASETYPE="MULTIPURPOSE"
-
+CRS_DEV=/dev/loop30
+CRS_DEV_STRING=/dev/loop*
 
 CPU_SHARE=1024
 MEMORY_LIMIT=3750m
@@ -469,7 +470,7 @@ createnode(){
 	mkfs.ext4 -F /docker/$nodename/orahome.img
 	setuploop $IP /docker/$nodename/orahome.img
 	#docker run -c $CPU_SHARE -m $MEMORY_LIMIT --privileged=true -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media ractest:racbase$2 /sbin/init
-	docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS --device=/dev/loop30:/dev/loop30 --device=/dev/loop${IP}:/dev/loop${IP} -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media ractest:racbase$2 /sbin/init
+	docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS -d -h ${nodename}.${DOMAIN_NAME} --name ${nodename} --dns=127.0.0.1 -v /lib/modules:/lib/modules -v /docker/media:/media ractest:racbase$2 /sbin/init
 	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
 	do
 		docker_ip $nodename ${BRNAME[$k]} eth`expr $k + 1` `getip $k real $1`/24
@@ -514,9 +515,11 @@ startnode(){
     nodename=`getnodename $1`
     IP=`expr 100 + $1`
     setuploop $IP /docker/$nodename/orahome.img
-    docker start ${nodename} --dns=127.0.0.1 
-    docker_ip $nodename brvxlan0 eth1 192.168.0.${IP}/24
-    docker_ip $nodename brvxlan1 eth2 192.168.100.${IP}/24
+    docker start ${nodename} 
+	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
+	do
+		docker_ip $nodename ${BRNAME[$k]} eth`expr $k + 1` `getip $k real $1`/24
+        done
 }
 
 startdisk(){
@@ -603,7 +606,8 @@ creatersp()
 		fi
 			NODECOUNT=`expr $NODECOUNT + 1`
 	done
-    
+	MyNetwork=`echo $MyIp | perl -ne ' if (/([\d]+\.[\d]+\.)/){ print $1}'`
+	MyNetwork="${MyNetwork}0.0"    
     
     cat > /home/grid/asm.rsp <<EOF
 oracle.assistants.asm|S_ASMPASSWORD=$ASMPASSWORD
@@ -632,7 +636,7 @@ oracle.install.crs.config.gpnp.gnsClientDataFile=
 oracle.install.crs.config.gpnp.gnsSubDomain=
 oracle.install.crs.config.gpnp.gnsVIPAddress=
 oracle.install.crs.config.clusterNodes=$CLUSTERNODES
-oracle.install.crs.config.networkInterfaceList=eth0:172.17.0.0:3,eth1:192.168.0.0:1,eth2:192.168.100.0:2
+oracle.install.crs.config.networkInterfaceList=eth0:$MyNetwork:3,tap0:${NETWORKS[0]}:1,tap1:${NETWORKS[1]}:2
 oracle.install.crs.config.storageOption=LOCAL_ASM_STORAGE
 oracle.install.crs.config.sharedFileSystemStorage.votingDiskLocations=
 oracle.install.crs.config.sharedFileSystemStorage.votingDiskRedundancy=
@@ -645,8 +649,8 @@ oracle.install.asm.SYSASMPassword=$ASMPASSWORD
 oracle.install.asm.diskGroup.name=$DISKGROUPNAME
 oracle.install.asm.diskGroup.redundancy=EXTERNAL
 oracle.install.asm.diskGroup.AUSize=1
-oracle.install.asm.diskGroup.disks=/dev/loop30
-oracle.install.asm.diskGroup.diskDiscoveryString=/dev/loop*
+oracle.install.asm.diskGroup.disks=$CRS_DEV
+oracle.install.asm.diskGroup.diskDiscoveryString=$CRS_DEV_STRING
 oracle.install.asm.monitorPassword=$ASMPASSWORD
 oracle.install.asm.ClientDataFile=
 oracle.install.crs.config.ignoreDownNodes=false
