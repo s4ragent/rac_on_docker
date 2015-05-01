@@ -75,7 +75,9 @@ hostinstallpackagesrhel(){
 	yum -y update device-mapper
 	HaveDocker=`rpm -qa | grep docker | wc -l`
 	if [ $HaveDocker == "0" ]; then
-		yum -y install docker	
+		yum -y install docker
+		systemctl start docker
+		systemctl enable docker
 	fi	
 }
 
