@@ -23,3 +23,5 @@ execute create_racbase.sh
     #bash create_racbase.sh all_in_one
 
 
+
+this code/image tested on ubuntu 14.04/docker-1.5 and CentOS7/docker-1.5
