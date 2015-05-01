@@ -3,16 +3,12 @@
 download Oracle Software and place it /docker/media
 
 
-mkdir -p /docker/media
-
+`mkdir -p /docker/media
 unzip linuxamd64_12102_database_1of2.zip -d /docker/media
-
 unzip linuxamd64_12102_database_2of2.zip -d /docker/media
-
 unzip linuxamd64_12102_grid_1of2.zip -d /docker/media
-
 unzip linuxamd64_12102_grid_2of2.zip -d /docker/media
-
+`
 ls -al /docker/media
 *********************************
 total 16
