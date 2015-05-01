@@ -16,7 +16,8 @@ download Oracle Software and place it /docker/media
     drwxr-xr-x 7 root root 4096 Jul  7  2014 database
     drwxr-xr-x 7 root root 4096 Jul  7  2014 grid
     
-h execute create_racbase.sh  
+execute create_racbase.sh  
+
     #git clone http://github.com/s4ragent/rac_on_docker/
     #cd rac_on_docker
     #bash create_racbase.sh all_in_one
