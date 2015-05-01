@@ -606,7 +606,8 @@ creatersp()
 		fi
 			NODECOUNT=`expr $NODECOUNT + 1`
 	done
-	MyNetwork=`echo $MyIp | perl -ne ' if (/([\d]+\.[\d]+\.)/){ print $1}'`
+	MyIp=`ip a show eth0 | grep "inet " | awk -F '[/ ]' '{print $6}'`
+	MyNetwork=`echo $MyIp | grep -Po '\d{1,3}\.\d{1,3}\.'`
 	MyNetwork="${MyNetwork}0.0"    
     
     cat > /home/grid/asm.rsp <<EOF
