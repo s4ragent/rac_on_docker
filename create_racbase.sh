@@ -824,8 +824,9 @@ disabletty(){
 	systemctl stop serial-getty@ttyS0.service
 	systemctl mask serial-getty@ttyS0.service
 }
+
 all_in_one(){
-	hoset_setup
+	host_setup
 	setupssh 7
 	nodeinstalldbca 2 7
 }
