@@ -70,7 +70,12 @@ hostinstallpackagesdebian(){
 }
 
 hostinstallpackagesrhel(){
+	yum -y install bridge-utils qemu-img
+	yum -y update device-mapper
 	HaveDocker=`rpm -qa | grep docker | wc -l`
+	if [ $HaveDocker == "0" ]; then
+		yum -y install docker	
+	fi	
 }
 
 getnodename ()
@@ -815,6 +820,13 @@ disabletty(){
 	systemctl stop serial-getty@ttyS0.service
 	systemctl mask serial-getty@ttyS0.service
 }
+all_in_one(){
+	hoset_setup
+	setupssh 7
+	nodeinstalldbca 2 7
+}
+
+	
 
 case "$1" in
   "createoraclehome" ) shift;createoraclehome $*;;
@@ -845,5 +857,6 @@ case "$1" in
   "createuser" ) shift;createuser $*;;
   "setdockersecurity" ) shift;setdockersecurity $*;;
   "host_setup" ) shift;host_setup $*;;
+  "all_in_one" ) shift;all_in_one $*;;
   * ) echo "Ex " ;;
 esac
