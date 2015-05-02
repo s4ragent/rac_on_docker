@@ -31,6 +31,7 @@ CRS_DEV_STRING=/dev/loop*
 
 CPU_SHARE=1024
 MEMORY_LIMIT=16384m
+CONTAINERS=2
 NETWORKS=("192.168.0.0" "192.168.100.0")
 BRNAME=("rac1" "rac2")
 BASE_IP=50
@@ -529,20 +530,32 @@ startdisk(){
 }
 
 startall(){
+	createbr
 	startdisk
-	for i in `seq 1 64`;
+	for i in `seq 1 $CONTAINERS`;
 	do
 	    startnode $i 
 	done
 }
 
-#$1 node number $2 OEL version
-deletenode(){
+stopall(){
+	for i in `seq 1 $CONTAINERS`;
+	do
+	    stopnode $i 
+	done
+}
+
+stopnode(){
     nodename=`getnodename $1`
     IP=`expr 100 + $1`
     docker stop ${nodename}
-    docker rm ${nodename}
     losetup -d /dev/loop${IP}
+}
+
+#$1 node number $2 OEL version
+deletenode(){
+    stopnode $1
+    docker rm ${nodename}
     rm -rf  /docker/$nodename
 }
 
@@ -831,7 +844,7 @@ disabletty(){
 all_in_one(){
 	host_setup
 	setupssh 7
-	nodeinstalldbca 2 7
+	nodeinstalldbca $CONTAINERS 7
 }
 
 	
@@ -866,5 +879,7 @@ case "$1" in
   "setdockersecurity" ) shift;setdockersecurity $*;;
   "host_setup" ) shift;host_setup $*;;
   "all_in_one" ) shift;all_in_one $*;;
+  "stopnode" ) shift;stopnode $*;;
+  "stopall" ) shift;stopall $*;;
   * ) echo "Ex " ;;
 esac
