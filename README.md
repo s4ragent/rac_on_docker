@@ -31,7 +31,7 @@ and start container 1
     #bash create_racbase.sh startnode 1  
 
 
-if you host reboot   
+if you host reboot  
 
     #bash create_racbase.sh startall  
 
