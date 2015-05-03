@@ -23,6 +23,7 @@ execute create_racbase.sh
     #bash create_racbase.sh all_in_one
 
 if you want to stop container 1     (1 is container number)  
+    
     #bash create_racbase.sh stopnode 1  
 
 and start container 1   
