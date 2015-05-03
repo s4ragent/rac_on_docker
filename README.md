@@ -22,5 +22,17 @@ execute create_racbase.sh
     #cd rac_on_docker
     #bash create_racbase.sh all_in_one
 
+if you want to stop container 1   (1 is first container 2 is second container)
+
+    #bash create_racbase.sh stopnode 1
+
+and restart container
+
+    #bash create_racbase.sh startnode 1
+    
+if you reboot host
+
+    #bash create_racbase.sh startall
+
 
 this code/image tested on ubuntu 14.04/docker-1.5 and CentOS7/docker-1.5
