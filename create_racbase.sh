@@ -389,6 +389,7 @@ createcontainer(){
     docker stop racbase$1
     docker commit racbase$1 s4ragent/rac-on-docker:$1
     docker rm racbase$1
+    ps -ef | grep agetty | awk '{print "kill -9",$2}'| sh
 }
 
 setupssh(){
@@ -502,7 +503,7 @@ createtestnode(){
 	qemu-img create -f raw -o size=20G /docker/$nodename/orahome.img
 	mkfs.ext4 -F /docker/$nodename/orahome.img
 	setuploop $IP /docker/$nodename/orahome.img
-	docker run -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS -h ${nodename}.${DOMAIN_NAME} --name ${nodename}  -v /lib/modules:/lib/modules -v /docker/media:/media oraclelinux:$2 /sbin/init
+	docker run -d -c $CPU_SHARE -m $MEMORY_LIMIT $DOCKER_CAPS -h ${nodename}.${DOMAIN_NAME} --name ${nodename}  -v /lib/modules:/lib/modules -v /docker/media:/media oraclelinux:$2 /sbin/init
 	##### ########
 	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
 	do
@@ -835,16 +836,31 @@ dockerin(){
 }
 
 disabletty(){
+case "$rhel_version" in
+    7*)
 	systemctl stop getty@tty1.service
 	systemctl mask getty@tty1.service
 	systemctl stop serial-getty@ttyS0.service
 	systemctl mask serial-getty@ttyS0.service
+      ;;
+    6*)
+	mv /etc/init/tty.conf /etc/init/tty.bk
+	mv /etc/init/serial.conf /etc/init/serial.bk
+	ps -ef | grep agetty | awk '{print "kill -9",$2}'| sh
+	;;
+esac
 }
 
 all_in_one(){
 	host_setup
 	setupssh 7
 	nodeinstalldbca $CONTAINERS 7
+}
+
+all_in_one6(){
+	host_setup
+	setupssh 6
+	nodeinstalldbca $CONTAINERS 6
 }
 
 	
@@ -879,6 +895,7 @@ case "$1" in
   "setdockersecurity" ) shift;setdockersecurity $*;;
   "host_setup" ) shift;host_setup $*;;
   "all_in_one" ) shift;all_in_one $*;;
+  "all_in_one6" ) shift;all_in_one6 $*;;
   "stopnode" ) shift;stopnode $*;;
   "stopall" ) shift;stopall $*;;
   * ) echo "Ex " ;;
