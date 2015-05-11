@@ -548,9 +548,11 @@ stopall(){
 
 stopnode(){
     nodename=`getnodename $1`
+    ID=`docker inspect --format='{{.Id}}' $nodename`
     IP=`expr 100 + $1`
     docker stop ${nodename}
     losetup -d /dev/loop${IP}
+    systemctl stop docker-${ID}.scope
 }
 
 #$1 node number $2 OEL version
