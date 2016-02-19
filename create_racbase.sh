@@ -812,8 +812,10 @@ nodeinstalldbca(){
         nodename=`getnodename 1`
 	rm -rf oraclekey
 	rm -rf gridkey
-        docker cp  ${nodename}:/home/oracle/.ssh/id_rsa  oraclekey
-        docker cp  ${nodename}:/home/grid/.ssh/id_rsa  gridkey
+	mkdir oraclekey
+	mkdir gridkey
+        docker cp  ${nodename}:/home/oracle/.ssh/id_rsa  oraclekey/
+        docker cp  ${nodename}:/home/grid/.ssh/id_rsa  gridkey/
         docker exec -ti ${nodename} sh /root/create_racbase.sh creatersp $1
         
         grid_install
