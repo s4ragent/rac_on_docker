@@ -1,4 +1,21 @@
-FROM s4ragent/rac_on_docker:OEL6-base
+FROM oraclelinux:6
+#install epel
+RUN rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+#installpackages
+RUN yum -y install traceroute\
+                   unzip\
+                   iperf\
+                   oracle-rdbms-server-12cR1-preinstall\
+                   screen\
+                   nfs-utils\
+                   dnsmasq\
+                   tar\
+                   net-tools\
+                   expect\
+                   bind-utils
+RUN yum -y reinstall glibc-common
+RUN yum -y clean all
+RUN mv /etc/init/tty.conf /etc/init/tty.bk; mv /etc/init/serial.conf /etc/init/serial.bk
 RUN userdel -r oracle && groupdel dba && groupdel oinstall && \
     groupadd -g 54321 dba && groupadd -g 54322 oinstall && \
     groupadd -g 54323 asmdba && groupadd -g 54324 asmoper && groupadd -g 54325 asmadmin && \
@@ -33,5 +50,5 @@ RUN chmod 755 /root/util.sh
 #RUN /root/util.sh createsshkey
 RUN /root/util.sh createhosts
 ## enable service & disable service
-RUN chkconfig xrdp on && chkconfig iptables off && chkconfig NetworkManager off
+RUN iptables off
 ENTRYPOINT ["/sbin/init"]
