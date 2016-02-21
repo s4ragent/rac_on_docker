@@ -11,3 +11,4 @@ RUN echo -e "#for asm#\n\
 " >> /etc/exports
 RUN chkconfig nfs on
 RUN echo "/etc/init.d/nfs restart" >> /etc/rc.d/rc.local
+ENTRYPOINT ["/sbin/init"]
