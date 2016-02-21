@@ -96,7 +96,7 @@ RUN  mkdir ${MOUNT_PATH} && \
      chown oracle:oinstall ${ORA_ORACLE_BASE} && \
      chmod -R 775 ${MOUNT_PATH}
 ##for nfs
-echo -e "### for oracle install ####\n\
+RUN echo -e "### for oracle install ####\n\
 $NAS_IP:/asm_disk $MOUNT_PATH/shared_config nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
 $NAS_IP:/shared_grid $GRID_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
 $NAS_IP:/shared_home $ORA_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
