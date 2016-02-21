@@ -21,9 +21,9 @@ RUN yum -y groupinstall Xfce "Japanese Support" &&\
 RUN yum -y reinstall glibc-common
 RUN yum -y clean all
 #xrdp
-ADD https://raw.githubusercontent.com/s4ragent/RAC-on-XX/master/docker/images/Xclients /etc/skel/.Xclients
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/Xclients /etc/skel/.Xclients
 RUN chmod +x /etc/skel/.Xclients
-ADD https://raw.githubusercontent.com/s4ragent/RAC-on-XX/master/docker/images/km-e0010411.ini /etc/xrdp/km-e0010411.ini
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/km-e0010411.ini /etc/xrdp/km-e0010411.ini
 RUN cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-0411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0200411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0210411.ini
