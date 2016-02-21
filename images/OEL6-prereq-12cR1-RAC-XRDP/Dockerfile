@@ -1,4 +1,4 @@
-FROM s4ragent/rac_on_docker:/OEL6-prereq-12cR1-RAC
+FROM s4ragent/rac_on_docker:OEL6-prereq-12cR1-RAC
 RUN yum -y groupinstall Xfce "Japanese Support" &&\
     yum -y install xrdp\
                    tigervnc-server\
