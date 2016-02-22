@@ -171,7 +171,7 @@ initasmimg()
 	if [ ! -e /u01/asm_disk/asm01.img -a $nfscount -gt 0 ] ; then
 		dd if=/dev/zero of=/u01/asm_disk/asm01.img bs=1M count=`expr 20 \* 1024`
 		chmod 0660 /u01/asm_disk/asm01.img
-		chown -R grid:oinstall /u01/asm_disk/asm01.img
+		chown -R grid:oinstall /u01/asm_disk
 		source /home/grid/.bash_profile
 		chown -R grid:oinstall $ORACLE_HOME
 		source /home/oracle/.bash_profile
