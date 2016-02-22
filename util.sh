@@ -106,7 +106,7 @@ getip () {
 getipfromhost(){
 	local nodenumber=`getnumber $2`
 	nodenumber=`expr nodenumber - $BASE_IP`
-	getip $1 nodenumber
+	getip $1 real $nodenumber
 }
 
 createhosts()
