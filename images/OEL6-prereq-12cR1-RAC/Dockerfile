@@ -1,4 +1,5 @@
 FROM s4ragent/rac_on_docker:OEL6-prereq-Common
+MAINTAINER MASAKI OOSHIMA s4ragent
 ENV MOUNT_PATH /u01
 ENV ORA_ORACLE_BASE /u01/app/oracle
 ENV ORA_ORACLE_HOME /u01/app/oracle/product/12.1.0/dbhome_1
