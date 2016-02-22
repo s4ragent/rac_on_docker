@@ -36,7 +36,6 @@ grid soft stack 10240\n\
 ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
 RUN chmod 755 /root/util.sh
 RUN /root/util.sh createsshkey
-RUN /root/util.sh createhosts
 ## enable service & disable service
 RUN iptables off
 ENTRYPOINT ["/sbin/init"]
