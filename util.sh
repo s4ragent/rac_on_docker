@@ -102,6 +102,13 @@ getip () {
 	fi;
 }
 
+#$1 network number $2 hostname
+getipfromhost(){
+	local nodenumber=`getnumber $2`
+	nodenumber=`expr nodenumber - $BASE_IP`
+	getip $1 nodenumber
+}
+
 createhosts()
 {
 	cat > $HOSTFILE <<EOF
@@ -197,5 +204,6 @@ case "$1" in
   "setlangja" ) shift;setlangja $*;;
   "initasmimg" ) shift;initasmimg $*;;
   "createnetwork" ) shift;createnetwork $*;;
+  "getipfromhost") shift;getipfromhost $*;;
   "createnode" ) shift;createnode $*;;
 esac
