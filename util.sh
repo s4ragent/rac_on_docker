@@ -205,11 +205,14 @@ createnode(){
                 	docker run --privileged -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC                
         		;; 
 	esac
-	
 	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
         do
 		docker network connect --ip `getipfromhost $k $1` rac$k $1
         done
+        if [ "$2" != "7" ] ; then
+		docker exec -ti $1 hostname ${1}.${DOMAIN_NAME}
+		docker exec -ti $1 sed -i "s/localhost.localdomain/${1}.${DOMAIN_NAME}/g" /etc/sysconfig/network
+	fi
         for i in $(seq 1 30) ; do echo -n "#"; sleep 1  ; done
 }
 
