@@ -1,6 +1,6 @@
 FROM oraclelinux:6
 #installpackages
-RUN yum -y install nfs-utils
+RUN yum -y install nfs-utils\
                    dnsmasq\
                    tar\
                    net-tools\
