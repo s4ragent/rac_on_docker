@@ -105,7 +105,7 @@ getip () {
 #$1 network number $2 hostname
 getipfromhost(){
 	local nodenumber=`getnumber $2`
-	nodenumber=`expr nodenumber - $BASE_IP`
+	nodenumber=`expr $nodenumber - $BASE_IP`
 	getip $1 real $nodenumber
 }
 
