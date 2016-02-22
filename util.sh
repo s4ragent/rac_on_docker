@@ -182,8 +182,11 @@ createnetwork(){
 
 createnode(){
 	local nodenumber=`getnumber $1`
-	local nodeip=`getip real $nodenumber`
-	echo $nodeip
+        for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
+        do
+		local nodeip=`getip $k real $nodenumber`
+		echo $nodeip
+        done
 }
 
 case "$1" in
