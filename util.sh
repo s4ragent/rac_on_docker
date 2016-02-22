@@ -208,7 +208,7 @@ createnode(){
 	
 	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
         do
-		docker network connect --ip `getipfromhost $k $1` $1 rac$k 
+		docker network connect --ip `getipfromhost $k $1` rac$k $1
         done
 }
 
