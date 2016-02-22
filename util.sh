@@ -186,4 +186,5 @@ case "$1" in
   "changehostname" ) shift;changehostname $*;;  
   "setlangja" ) shift;setlangja $*;;
   "initasmimg" ) shift;initasmimg $*;;
+  "createnetwork" ) shift;createnetwork $*;; 
 esac
