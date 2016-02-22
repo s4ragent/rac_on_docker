@@ -186,7 +186,7 @@ createnetwork(){
         done
 }
 
-$1 hostname $2 OEL VER $3 Oracle VER
+#$1 hostname $2 OEL VER $3 Oracle VER
 createnode(){
 	case "$1" in
         	nas*)
