@@ -57,5 +57,5 @@ RUN cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-0411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0200411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0210411.ini
 #disable services
-RUN iptables off
+RUN chkconfig iptables off
 ENTRYPOINT ["/sbin/init"]
