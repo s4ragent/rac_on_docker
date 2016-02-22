@@ -2,8 +2,6 @@ FROM oraclelinux:6
 #install epel
 RUN rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 #installpackages
-RUN rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-#installpackages
 RUN yum -y groupinstall Xfce "Japanese Support" &&\
     yum -y install git\
                    traceroute\
