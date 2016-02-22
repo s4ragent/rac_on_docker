@@ -60,6 +60,7 @@ ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /roo
 RUN chmod 755 /root/util.sh
 RUN /root/util.sh createsshkey
 #for dnsmasq
+sed -i.bak 's:/etc/hosts:/tmp/hosts:g' /lib64/libnss_files.so.2
 RUN echo -e "listen-address=127.0.0.1\n\
 resolv-file=/etc/resolv.dnsmasq.conf\n\
 conf-dir=/etc/dnsmasq.d\n\
