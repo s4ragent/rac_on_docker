@@ -50,9 +50,9 @@ ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /roo
 RUN chmod 755 /root/util.sh
 RUN /root/util.sh createsshkey
 #xrdp
-ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/docker/images/Xclients /etc/skel/.Xclients
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/Xclients /etc/skel/.Xclients
 RUN chmod +x /etc/skel/.Xclients
-ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/docker/images/km-e0010411.ini /etc/xrdp/km-e0010411.ini
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/km-e0010411.ini /etc/xrdp/km-e0010411.ini
 RUN cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-0411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0200411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0210411.ini
