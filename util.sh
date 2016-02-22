@@ -179,6 +179,13 @@ createnetwork(){
         done
 }
 
+
+createnode(){
+	local nodenumber=`getnumber $1`
+	local nodeip=`getip $nodenumber`
+	echo $nodeip
+}
+
 case "$1" in
   "createhosts" ) shift;createhosts $*;;
   "createsshkey" ) shift;createsshkey $*;;
@@ -186,5 +193,6 @@ case "$1" in
   "changehostname" ) shift;changehostname $*;;  
   "setlangja" ) shift;setlangja $*;;
   "initasmimg" ) shift;initasmimg $*;;
-  "createnetwork" ) shift;createnetwork $*;; 
+  "createnetwork" ) shift;createnetwork $*;;
+  "createnode" ) shift;createnode $*;;
 esac
