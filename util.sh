@@ -12,7 +12,7 @@ NODE_BASE_IP=70
 BASE_IP=$NODE_BASE_IP
 
 
-NETWORKS=("192.168.0.0" "192.168.100.0" "192.168.200.0" "192.168.250.0")
+NETWORKS=("192.168.222.0" "192.168.223.0" "192.168.224.0" "192.168.225.0")
 HOSTFILE=/tmp/hosts
 
 changehostname()
@@ -127,6 +127,7 @@ EOF
 
 createsshkey()
 {
+/etc/init.d/sshd start
 WORK_DIR=/work
 mkdir -p $WORK_DIR
 
@@ -138,7 +139,7 @@ for i in `seq 1 64`; do
     echo "${nodename},`getip 0 real $i` $hostkey" >> /work/known_hosts
 done
 
-for user in oracle grid oracleja gridja
+for user in oracle grid
 do
 	mkdir /home/$user/.ssh
 	cat /work/id_rsa.pub >> /home/$user/.ssh/authorized_keys
@@ -151,34 +152,6 @@ done
 	rm -rf $WORK_DIR/id_rsa $WORK_DIR/id_rsa.pub $WORK_DIR/known_hosts
 }
 
-createvxlanconf()
-{
-cnt=0
-for NETWORK in ${NETWORKS[@]}; do
-        #get network prefix
-        SEGMENT=`echo ${NETWORK} | grep -Po '\d{1,3}\.\d{1,3}\.\d{1,3}\.'`
-        eval `ipcalc -s -p ${NETWORK}/24`
-        vxlanip=`getip $cnt real $1`
-        cat > /etc/vxlan/vxlan${cnt}.conf <<EOF
-vInterface = vxlan${cnt}
-Id = 1${cnt}
-Ether = eth0
-List = /etc/vxlan/all.ip
-Address = ${vxlanip}/${PREFIX}
-EOF
-
-        cnt=`expr $cnt + 1`
-done
-}
-
-createvxlanfromhost()
-{
-	base_number=`getnumber $1`
-	number=`expr $base_number - $BASE_IP`
-	createvxlanconf $number
-}
-
-
 setlangja()
 {
 	echo "export LANG=ja_JP.UTF-8" >> /home/oracle/.bash_profile
@@ -188,13 +161,10 @@ setlangja()
 initasmimg()
 {
 	nfscount=`mount | grep nfs | wc -l`
-	if [ ! -e /u01/shared_config/ocr.img -a $nfscount -gt 0 ] ; then
-		dd if=/dev/zero of=/u01/shared_config/ocr.img bs=1M count=`expr 6 \* 1024`
-		chmod 0660 /u01/shared_config/ocr.img
-		dd if=/dev/zero of=/u01/oradata/oradata.img bs=1M count=`expr 8 \* 1024`
-		chmod 0660 /u01/oradata/oradata.img
-		chown -R grid:oinstall /u01/shared_config
-		chown -R oracle:oinstall /u01/oradata
+	if [ ! -e /u01/asm_disk/asm01.img -a $nfscount -gt 0 ] ; then
+		dd if=/dev/zero of=/u01/asm_disk/asm01.img bs=1M count=`expr 20 \* 1024`
+		chmod 0660 /u01/asm_disk/asm01.img
+		chown -R grid:oinstall /u01/asm_disk/asm01.img
 		source /home/grid/.bash_profile
 		chown -R grid:oinstall $ORACLE_HOME
 		source /home/oracle/.bash_profile
@@ -203,11 +173,9 @@ initasmimg()
 }
 
 case "$1" in
-  "createvxlanconf" ) shift;createvxlanconf $*;;
   "createhosts" ) shift;createhosts $*;;
   "createsshkey" ) shift;createsshkey $*;;
   "getnumber" ) shift;getnumber $*;;
-  "createvxlanfromhost" ) shift;createvxlanfromhost $*;;
   "changehostname" ) shift;changehostname $*;;  
   "setlangja" ) shift;setlangja $*;;
   "initasmimg" ) shift;initasmimg $*;;
