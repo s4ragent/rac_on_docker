@@ -20,9 +20,9 @@ RUN userdel -r oracle && groupdel dba && groupdel oinstall && \
     groupadd -g 54321 dba && groupadd -g 54322 oinstall && \
     groupadd -g 54323 asmdba && groupadd -g 54324 asmoper && groupadd -g 54325 asmadmin && \
     useradd -u 54321 -g oinstall -G dba,asmdba,asmadmin oracle && \
-    useradd -u 54322 -g oinstall -G asmadmin,asmdba,asmoper grid && \
-    echo "oracle:oracle123" | chpasswd && \
-    echo "grid:grid123" | chpasswd
+    useradd -u 54322 -g oinstall -G asmadmin,asmdba,asmoper grid
+#    echo "oracle:oracle123" | chpasswd && \
+#    echo "grid:grid123" | chpasswd
 RUN sed -i 's/oracle/#oracle/' /etc/security/limits.d/oracle-rdbms-server-12cR1-preinstall.conf && \
 sed -i 's/oracle/#oracle/' /etc/security/limits.conf && \
 echo -e "\n\
