@@ -50,4 +50,7 @@ nas1:/shared_home $ORA_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rs
 RUN mkdir -p $MOUNT_PATH/asm_disk &&\
 mkdir -p $ORA_ORACLE_HOME
 RUN echo "/root/util.sh initasmimg" >> /etc/rc.d/rc.local
+#createpreoracle
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/retmpfs.sh /usr/local/bin/retmpfs.sh
+RUN install -o root -g root -m 755 /usr/local/bin/retmpfs.sh /etc/init.d/retmpfs && chkconfig retmpfs on
 ENTRYPOINT ["/sbin/init"]
