@@ -172,6 +172,13 @@ initasmimg()
         fi
 }
 
+createnetwork(){
+        for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
+        do
+		docker network create --subnet=$NETWORKS[$k] rac$k
+        done
+}
+
 case "$1" in
   "createhosts" ) shift;createhosts $*;;
   "createsshkey" ) shift;createsshkey $*;;
