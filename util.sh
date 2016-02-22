@@ -182,7 +182,7 @@ createnetwork(){
 
 createnode(){
 	local nodenumber=`getnumber $1`
-	local nodeip=`getip $nodenumber`
+	local nodeip=`getip real $nodenumber`
 	echo $nodeip
 }
 
