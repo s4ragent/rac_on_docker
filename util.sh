@@ -186,13 +186,29 @@ createnetwork(){
         done
 }
 
-
+$1 hostname $2 OEL_ver
 createnode(){
-	local nodenumber=`getnumber $1`
-        for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
+	case "$1" in
+        	nas*)
+        		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/oracle-rac:OEL6-NAS
+                	;;
+        	db*)
+                	;;
+        	oem*)
+                	;;
+        	client*)
+                	;;
+        	node001)
+                	docker run --privileged -p 3389:3389 -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/oracle-rac:OEL$2-$3-RAC                
+        		;;
+        	node*)
+                	docker run --privileged -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/oracle-rac:OEL$2-$3-RAC                
+        		;; 
+	esac
+	
+	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
         do
-		local nodeip=`getip $k real $nodenumber`
-		echo $nodeip
+		docker network connect --ip `getipfromhost $k $1` $1 rac$k 
         done
 }
 
