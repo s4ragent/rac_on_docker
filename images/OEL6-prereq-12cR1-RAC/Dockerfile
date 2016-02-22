@@ -49,7 +49,7 @@ nas1:/shared_home $ORA_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rs
 " >> /etc/fstab
 RUN mkdir -p $MOUNT_PATH/asm_disk &&\
         mkdir -p $ORA_ORACLE_HOME &&\
-        chown grid:oinstall &&\
+        chown grid:oinstall $MOUNT_PATH/asm_disk &&\
         chown oracle:oinstall $ORA_ORACLE_HOME
 ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
 RUN chmod 755 /root/util.sh
