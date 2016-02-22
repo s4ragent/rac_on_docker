@@ -27,7 +27,17 @@ RUN yum -y groupinstall Xfce "Japanese Support" &&\
                    firefox
 RUN yum -y reinstall glibc-common
 RUN yum -y clean all
+#disable tty
 RUN mv /etc/init/tty.conf /etc/init/tty.bk; mv /etc/init/serial.conf /etc/init/serial.bk
+#xrdp
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/Xclients /etc/skel/.Xclients
+RUN chmod +x /etc/skel/.Xclients
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/km-e0010411.ini /etc/xrdp/km-e0010411.ini
+RUN cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-0411.ini &&\
+    cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0200411.ini &&\
+    cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0210411.ini &&\
+    chkconfig xrdp on
+#create user
 RUN userdel -r oracle && groupdel dba && groupdel oinstall && \
     groupadd -g 54321 dba && groupadd -g 54322 oinstall && \
     groupadd -g 54323 asmdba && groupadd -g 54324 asmoper && groupadd -g 54325 asmadmin && \
@@ -49,13 +59,6 @@ grid soft stack 10240\n\
 ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
 RUN chmod 755 /root/util.sh
 RUN /root/util.sh createsshkey
-#xrdp
-ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/Xclients /etc/skel/.Xclients
-RUN chmod +x /etc/skel/.Xclients
-ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/km-e0010411.ini /etc/xrdp/km-e0010411.ini
-RUN cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-0411.ini &&\
-    cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0200411.ini &&\
-    cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0210411.ini
 #disable services
 RUN chkconfig iptables off
 ENTRYPOINT ["/sbin/init"]
