@@ -45,10 +45,10 @@ nameserver 8.8.4.4\n\
 ## OEL7 systemctl enable dnsmasq
 ## OEL6 chkconfig dnsmasq on
 RUN chkconfig dnsmasq on
-#ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
-#RUN chmod 755 /root/util.sh
-#RUN /root/util.sh createsshkey
-#RUN /root/util.sh createhosts
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
+RUN chmod 755 /root/util.sh
+RUN /root/util.sh createsshkey
+RUN /root/util.sh createhosts
 ## enable service & disable service
 RUN iptables off
 ENTRYPOINT ["/sbin/init"]
