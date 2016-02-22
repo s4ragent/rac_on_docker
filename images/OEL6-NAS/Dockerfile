@@ -37,5 +37,5 @@ ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /roo
 RUN chmod 755 /root/util.sh
 RUN /root/util.sh createhosts
 ## enable service & disable service
-RUN iptables off
+RUN chkconfig iptables off
 ENTRYPOINT ["/sbin/init"]
