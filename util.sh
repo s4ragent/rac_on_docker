@@ -175,7 +175,7 @@ initasmimg()
 createnetwork(){
         for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
         do
-		docker network create --subnet=${NETWORKS[$k]} rac$k
+		docker network create --subnet=${NETWORKS[$k]}/24 rac$k
         done
 }
 
