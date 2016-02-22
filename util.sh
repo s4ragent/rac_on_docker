@@ -186,7 +186,7 @@ createnetwork(){
         done
 }
 
-$1 hostname $2 OEL_ver
+$1 hostname $2 OEL VER $3 Oracle VER
 createnode(){
 	case "$1" in
         	nas*)
@@ -199,10 +199,10 @@ createnode(){
         	client*)
                 	;;
         	node001)
-                	docker run --privileged -p 3389:3389 -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/oracle-rac:OEL$2-$3-RAC                
+                	docker run --privileged --tmpfs /dev/shm:rw,noexec,nosuid,size=1228000k -p 3389:3389 -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/oracle-rac:OEL$2-$3-RAC                
         		;;
         	node*)
-                	docker run --privileged -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/oracle-rac:OEL$2-$3-RAC                
+                	docker run --privileged --tmpfs /dev/shm:rw,noexec,nosuid,size=1228000k -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/oracle-rac:OEL$2-$3-RAC                
         		;; 
 	esac
 	
