@@ -217,6 +217,16 @@ createnode(){
         for i in $(seq 1 30) ; do echo -n "#"; sleep 1  ; done
 }
 
+#$1 node_count $2 OEL VER $3 Oracle VER
+createall()
+{
+	createnetwork
+	createnode nas1 6 
+	for i in `seq 1 $1`; do
+    		createnode `getnodename $i` $2 $3
+	done 
+}
+
 case "$1" in
   "createhosts" ) shift;createhosts $*;;
   "createsshkey" ) shift;createsshkey $*;;
@@ -227,4 +237,5 @@ case "$1" in
   "createnetwork" ) shift;createnetwork $*;;
   "getipfromhost") shift;getipfromhost $*;;
   "createnode" ) shift;createnode $*;;
+  "createall" ) shift;createall $*;;
 esac
