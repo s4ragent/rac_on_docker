@@ -27,6 +27,6 @@ ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/km-e0010411.
 RUN cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-0411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0200411.ini &&\
     cp /etc/xrdp/km-e0010411.ini /etc/xrdp/km-e0210411.ini &&\
-    chkconfig xrdp on && chkconfig iptables off
+    chkconfig xrdp on && chkconfig iptables off && NetworkManager off
 RUN mv /etc/init/tty.conf /etc/init/tty.bk; mv /etc/init/serial.conf /etc/init/serial.bk
 CMD ["/sbin/init"]
