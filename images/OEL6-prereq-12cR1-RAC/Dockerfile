@@ -55,7 +55,4 @@ RUN mkdir -p $MOUNT_PATH/asm_disk &&\
 ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
 RUN chmod 755 /root/util.sh
 RUN echo "/root/util.sh initasmimg" >> /etc/rc.d/rc.local
-#createpreoracle
-ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/retmpfs.sh /usr/local/bin/retmpfs.sh
-RUN install -o root -g root -m 755 /usr/local/bin/retmpfs.sh /etc/init.d/retmpfs && chkconfig retmpfs on
 ENTRYPOINT ["/sbin/init"]
