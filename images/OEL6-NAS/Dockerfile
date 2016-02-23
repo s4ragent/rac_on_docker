@@ -1,6 +1,6 @@
 FROM oraclelinux:6
 #installpackages
-RUN yum -y install nfs-utils
+RUN yum -y install nfs-utils bind-utils dnsmasq
 ## for NFS
 RUN mkdir /asm_disk &&\
 mkdir /shared_grid &&\
