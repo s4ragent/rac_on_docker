@@ -191,6 +191,7 @@ createnode(){
 	case "$1" in
         	nas*)
         		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/rac_on_docker:OEL6-NAS
+        		docker exec -ti $1 sed -i "s/listen-address=127.0.0.1/listen-address=`getipfromhost 3 $1`/g" /etc/dnsmasq.conf
                 	;;
         	db*)
                 	;;
@@ -199,10 +200,10 @@ createnode(){
         	client*)
                 	;;
         	node001)
-                	docker run --privileged -p 3389:3389 -d -h $1.${DOMAIN_NAME}  --name $1 --dns=127.0.0.1 --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC
+                	docker run --privileged -p 3389:3389 -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC
         		;;
         	node*)
-                	docker run --privileged -d -h $1.${DOMAIN_NAME}  --name $1 --dns=127.0.0.1 --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC                
+                	docker run --privileged -d -h $1.${DOMAIN_NAME}  --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC                
         		;; 
 	esac
 	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
