@@ -21,21 +21,6 @@ grid soft stack 10240\n\
 ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
 RUN chmod 755 /root/util.sh
 RUN /root/util.sh createsshkey
-#for dnsmasq
-RUN sed -i.bak 's:/etc/hosts:/tmp/hosts:g' /lib64/libnss_files.so.2
-RUN echo -e "listen-address=127.0.0.1\n\
-resolv-file=/etc/resolv.dnsmasq.conf\n\
-conf-dir=/etc/dnsmasq.d\n\
-user=root\n\
-addn-hosts=/tmp/hosts\n\
-" >> /etc/dnsmasq.conf
-RUN echo -e "nameserver 8.8.8.8\n\
-nameserver 8.8.4.4\n\
-" >> /etc/resolv.dnsmasq.conf
-## OEL7 systemctl enable dnsmasq
-## OEL6 chkconfig dnsmasq on
-RUN chkconfig dnsmasq on
-RUN /root/util.sh createhosts
 #disable services
 RUN chkconfig iptables off
 ENTRYPOINT ["/sbin/init"]
