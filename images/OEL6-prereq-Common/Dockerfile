@@ -23,6 +23,6 @@ RUN chmod 755 /root/util.sh
 RUN /root/util.sh createsshkey
 #disable services
 RUN chkconfig iptables off
-ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/retmpfs.sh
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/retmpfs.sh /usr/local/bin/retmpfs.sh
 RUN install -o root -g root -m 755 /usr/local/bin/retmpfs.sh /etc/init.d/retmpfs
 ENTRYPOINT ["/sbin/init"]
