@@ -43,4 +43,6 @@ RUN  mkdir ${ORA_MOUNT_PATH} && \
      mkdir -p ${ORA_ORACLE_BASE} && \
      chown oracle:oinstall ${ORA_ORACLE_BASE} && \
      chmod -R 775 ${ORA_MOUNT_PATH}
+ADD https://raw.githubusercontent.com/s4ragent/rac_on_docker/master/util.sh /root/util.sh
+RUN chmod 755 /root/util.sh
 ENTRYPOINT ["/sbin/init"]
