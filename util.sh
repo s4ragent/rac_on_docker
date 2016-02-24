@@ -167,9 +167,21 @@ setlangja()
 
 initasmimg()
 {
-	nfscount=`mount | grep asm_disk | wc -l`
+	##for nfs
+	echo -e "### for oracle install ####\n\
+nas1:/asm_disk $ORA_MOUNT_PATH/asm_disk nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
+nas2:/shared_grid $GRID_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
+nas3:/shared_home $ORA_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
+" >> /etc/fstab
+
+	mkdir -p $ORA_MOUNT_PATH/asm_disk &&\
+        mkdir -p $ORA_ORACLE_HOME &&\
+        chown grid:oinstall $ORA_MOUNT_PATH/asm_disk &&\
+        chown oracle:oinstall $ORA_ORACLE_HOME
+
+	mount -a
 	if [ ! -e /u01/asm_disk/asm01.img -a $nfscount -gt 0 ] ; then
-		dd if=/dev/zero of=/u01/asm_disk/asm01.img bs=1M count=`expr 20 \* 1024`
+		dd if=/dev/zero of=/u01/asm_disk/asm01.img bs=1M count=`expr 8 \* 1024`
 		chmod 0660 /u01/asm_disk/asm01.img
 		chown -R grid:oinstall /u01/asm_disk
 		source /home/grid/.bash_profile
@@ -221,7 +233,9 @@ createnode(){
 createall()
 {
 	createnetwork
-	createnode nas1 6 
+	createnode nas1 6
+	createnode nas2 6
+	createnode nas3 6
 	for i in `seq 1 $1`; do
     		createnode `getnodename $i` $2 $3
 	done 
