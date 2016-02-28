@@ -1,4 +1,5 @@
 FROM oraclelinux:6
+MAINTAINER MASAKI OOSHIMA s4ragent
 #install epel
 RUN rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
 #installpackages
@@ -17,7 +18,8 @@ RUN yum -y groupinstall Xfce "Japanese Support" &&\
                    bind-utils\
                    xrdp\
                    tigervnc-server\
-                   firefox
+                   firefox\
+                   qemu-img
 RUN yum -y reinstall glibc-common
 RUN yum -y clean all
 #xrdp
