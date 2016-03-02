@@ -241,6 +241,25 @@ createall()
 	done 
 }
 
+creatednsmasq()
+{
+	echo -e "listen-address=$1\n\
+resolv-file=/etc/resolv.dnsmasq.conf\n\
+conf-dir=/etc/dnsmasq.d\n\
+user=root\n\
+addn-hosts=/tmp/hosts\n\
+" >> /etc/dnsmasq.conf
+
+	echo -e "nameserver 8.8.8.8\n\
+nameserver 8.8.4.4\n\
+" >> /etc/resolv.dnsmasq.conf
+
+## OEL7 systemctl enable dnsmasq
+## OEL6 chkconfig dnsmasq on
+	chkconfig dnsmasq on
+	/root/util.sh createhosts
+}
+
 case "$1" in
   "createhosts" ) shift;createhosts $*;;
   "createsshkey" ) shift;createsshkey $*;;
@@ -252,4 +271,5 @@ case "$1" in
   "getipfromhost") shift;getipfromhost $*;;
   "createnode" ) shift;createnode $*;;
   "createall" ) shift;createall $*;;
+  "creatednsmasq" ) shift;creatednsmasq $*;;
 esac
