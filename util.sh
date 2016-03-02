@@ -165,7 +165,7 @@ setlangja()
 	echo "export LANG=ja_JP.UTF-8" >> /home/grid/.bash_profile
 }
 
-initasmimg()
+mountnfs()
 {
 	##for nfs
 	echo -e "### for oracle install ####\n\
@@ -174,20 +174,19 @@ nas2:/shared_grid $GRID_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,r
 nas3:/shared_home $ORA_ORACLE_HOME nfs rw,bg,hard,nointr,tcp,vers=3,timeo=600,rsize=32768,wsize=32768,actimeo=0 0 0 \n\
 " >> /etc/fstab
 
+	source /home/grid/.bash_profile
 	mkdir -p $ORA_MOUNT_PATH/asm_disk &&\
         mkdir -p $ORA_ORACLE_HOME &&\
         chown grid:oinstall $ORA_MOUNT_PATH/asm_disk &&\
         chown oracle:oinstall $ORA_ORACLE_HOME
 
 	mount -a
-	if [ ! -e /u01/asm_disk/asm.img ] ; then
-		chmod 0660 /u01/asm_disk/asm.img
-		chown -R grid:oinstall /u01/asm_disk
-		source /home/grid/.bash_profile
-		chown -R grid:oinstall $ORACLE_HOME
-		source /home/oracle/.bash_profile
-		chown -R oracle:oinstall $ORACLE_HOME
-        fi
+	chmod 0660 $ORA_MOUNT_PATH/asm_disk/asm.img
+	chown -R grid:oinstall $ORA_MOUNT_PATH/asm_disk
+	source /home/grid/.bash_profile
+	chown -R grid:oinstall $ORACLE_HOME
+	source /home/oracle/.bash_profile
+	chown -R oracle:oinstall $ORACLE_HOME
 }
 
 createnetwork(){
@@ -201,7 +200,10 @@ createnetwork(){
 createnode(){
 	case "$1" in
         	nas*)
-        		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/rac_on_docker:OEL6-NAS /root/util.sh creatednsmasq `getipfromhost 3 nas1`
+        		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/rac_on_docker:OEL6-NAS
+                	setnodeip $1
+                	setnodehostname $1 $2
+                	docker exec -ti $1 /root/util.sh creatednsmasq `getipfromhost 3 nas1`
                 	;;
         	db*)
                 	;;
@@ -211,21 +213,40 @@ createnode(){
                 	;;
         	node001)
                 	docker run --privileged -p 3389:3389 -d -h $1.${DOMAIN_NAME} --shm-size=1200m --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC
+                	setnodeip $1
+                	setnodehostname $1 $2
+                	docker exec -ti $1 /root/util.sh mountnfs
         		;;
         	node*)
                 	docker run --privileged -d -h $1.${DOMAIN_NAME}  --shm-size=1200m --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC                
+        		setnodeip $1
+                	setnodehostname $1 $2
+                	docker exec -ti $1 /root/util.sh mountnfs        		
         		;; 
 	esac
+
+
+        for i in $(seq 1 30) ; do echo -n "#"; sleep 1  ; done
+}
+
+#$1 hostname
+setnodeip()
+{
 	for (( k = 0; k < ${#NETWORKS[@]}; ++k ))
         do
 		docker network connect --ip `getipfromhost $k $1` rac$k $1
         done
-        if [ "$2" != "7" ] ; then
+}
+
+#$1 hostname $2 OEL VER
+setnodehostname()
+{
+	if [ "$2" != "7" ] ; then
 		docker exec -ti $1 hostname ${1}.${DOMAIN_NAME}
 		docker exec -ti $1 sed -i "s/localhost.localdomain/${1}.${DOMAIN_NAME}/g" /etc/sysconfig/network
 	fi
-        for i in $(seq 1 30) ; do echo -n "#"; sleep 1  ; done
 }
+
 
 #$1 node_count $2 OEL VER $3 Oracle VER
 createall()
