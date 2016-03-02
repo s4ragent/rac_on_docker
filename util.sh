@@ -203,7 +203,7 @@ createnode(){
         		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/rac_on_docker:OEL6-NAS
                 	setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec -ti $1 /root/util.sh creatednsmasq `getipfromhost 3 nas1`
+                	docker exec $1 "/root/util.sh creatednsmasq `getipfromhost 3 nas1`"
                 	;;
         	db*)
                 	;;
@@ -215,13 +215,13 @@ createnode(){
                 	docker run --privileged -p 3389:3389 -d -h $1.${DOMAIN_NAME} --shm-size=1200m --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC
                 	setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec -ti $1 /root/util.sh mountnfs
+                	docker exec $1 "/root/util.sh mountnfs"
         		;;
         	node*)
                 	docker run --privileged -d -h $1.${DOMAIN_NAME}  --shm-size=1200m --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC                
         		setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec -ti $1 /root/util.sh mountnfs        		
+                	docker exec $1 "/root/util.sh mountnfs"        		
         		;; 
 	esac
 
