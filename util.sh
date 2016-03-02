@@ -204,7 +204,7 @@ createnode(){
                 	docker exec -i $1 /bin/bash -c 'cat >/root/util.sh' <./util.sh
                 	setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec $1 "/root/util.sh creatednsmasq `getipfromhost 3 nas1`"
+                	docker exec -i $1 /bin/bash -c "/root/util.sh creatednsmasq `getipfromhost 3 nas1`"
                 	;;
         	db*)
                 	;;
@@ -217,14 +217,14 @@ createnode(){
                 	docker exec -i $1 /bin/bash -c 'cat >/root/util.sh' <./util.sh
                 	setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec $1 "/root/util.sh mountnfs"
+                	docker exec -i $1 /bin/bash -c "/root/util.sh mountnfs"
         		;;
         	node*)
                 	docker run --privileged -d -h $1.${DOMAIN_NAME}  --shm-size=1200m --name $1 --dns=`getipfromhost 3 nas1` --dns-search=${DOMAIN_NAME} -v /lib/modules:/lib/modules -v /docker/media:/media s4ragent/rac_on_docker:OEL$2-prereq-$3-RAC                
         		docker exec -i $1 /bin/bash -c 'cat >/root/util.sh' <./util.sh
         		setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec $1 "/root/util.sh mountnfs"        		
+                	docker exec -i $1 /bin/bash -c "/root/util.sh mountnfs"        		
         		;; 
 	esac
 
@@ -278,8 +278,18 @@ nameserver 8.8.4.4\n\
 
 ## OEL7 systemctl enable dnsmasq
 ## OEL6 chkconfig dnsmasq on
-	chkconfig dnsmasq on
-	/root/util.sh createhosts
+
+	oel_version=`rpm -q oraclelinux-release --qf "%{version}"`
+	case "$oel_version" in
+    		6*)
+		chkconfig dnsmasq on
+        	;;
+    		7*)
+		systemctl enable dnsmasq
+        	;;	
+	esac
+	createhosts
+	service dnsmasq start
 }
 
 case "$1" in
