@@ -298,7 +298,7 @@ case "$1" in
   "getnumber" ) shift;getnumber $*;;
   "changehostname" ) shift;changehostname $*;;  
   "setlangja" ) shift;setlangja $*;;
-  "initasmimg" ) shift;initasmimg $*;;
+  "mountnfs" ) shift;mountnfs $*;;
   "createnetwork" ) shift;createnetwork $*;;
   "getipfromhost") shift;getipfromhost $*;;
   "createnode" ) shift;createnode $*;;
