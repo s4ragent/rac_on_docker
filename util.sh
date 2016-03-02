@@ -204,7 +204,7 @@ createnode(){
                 	docker exec -i $1 /bin/bash -c 'cat >/root/util.sh' <./util.sh
                 	setnodeip $1
                 	setnodehostname $1 $2
-                	docker exec -i $1 /bin/bash -c "/root/util.sh creatednsmasq `getipfromhost 3 nas1`"
+                	docker exec -i $1 /bin/bash -c "/root/util.sh creatednsmasq `getipfromhost 3 $1`"
                 	;;
         	db*)
                 	;;
