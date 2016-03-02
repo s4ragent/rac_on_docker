@@ -201,8 +201,7 @@ createnetwork(){
 createnode(){
 	case "$1" in
         	nas*)
-        		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/rac_on_docker:OEL6-NAS
-        		docker exec -ti $1 sed -i "s/listen-address=127.0.0.1/listen-address=`getipfromhost 3 $1`/g" /etc/dnsmasq.conf
+        		docker run --privileged -d -h $1.${DOMAIN_NAME} --name $1 s4ragent/rac_on_docker:OEL6-NAS /root/util.sh creatednsmasq `getipfromhost 3 nas1`
                 	;;
         	db*)
                 	;;
